@@ -61,6 +61,11 @@ fn parse_list(content: &str) -> Result<Vec<TejarRecord>, crate::error::ReadError
             };
             offset = offset + record.file_size;
             records.push(record);
+        } else {
+            return Err(crate::error::ReadError::ParseError {
+                line: index + 1,
+                message: line.to_string(),
+            });
         }
     }
     Ok(records)
