@@ -1,5 +1,7 @@
 #[test]
 fn test1() {
+    // TODO: Test Contain so many unwraps
+
     fn current_dir() -> camino::Utf8PathBuf {
         let current_dir = std::env::current_dir().unwrap();
         camino::Utf8PathBuf::from_path_buf(current_dir).unwrap()
@@ -29,27 +31,26 @@ fn test1() {
         .collect::<Vec<_>>();
 
     let t = crate::create::create(&root, files.as_slice()).unwrap();
-
     println!("List Content");
     println!("{}", t.list);
 
+    println!("Files Content");
+    println!("{}", String::from_utf8(t.files.clone()).unwrap());
+
     // TODO: Read the content of individual file and match the content from reader output
     let reader = crate::read::reader(&t.list).unwrap();
-    let file_info = reader
-        .get_file_info(std::path::Path::new("foo/index.html"))
+    for (file, _) in files.iter() {
+        let file_path = root.join(file);
+        let original_content = String::from_utf8(std::fs::read(file_path).unwrap()).unwrap();
+
+        let file_info = reader.get_file_info(file.as_std_path()).unwrap();
+        let content = crate::read::get_content(
+            file_info.offset as usize,
+            file_info.file_size as usize,
+            t.files.as_slice(),
+        )
         .unwrap();
 
-    let start = file_info.offset as usize;
-    let end = start + file_info.file_size as usize;
-
-    let content = String::from_utf8(t.files.as_slice()[start..end].to_vec());
-    println!(
-        "Offset: {}, Size: {}, Content: {}",
-        file_info.offset,
-        file_info.file_size,
-        content.unwrap(),
-    );
-
-    println!("Files Content");
-    println!("{}", String::from_utf8(t.files).unwrap());
+        assert_eq!(original_content, content);
+    }
 }

@@ -12,4 +12,8 @@ pub enum ReadError {
     ParseError { line: usize, message: String },
     #[error("NotFound: {0}")]
     NotFound(String),
+    #[error("OutOfRange: {0}")]
+    OutOfRange(String),
+    #[error("from utf8 error")]
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
 }

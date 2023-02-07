@@ -35,14 +35,11 @@ impl Reader {
             file_size: file_record.file_size,
         })
     }
-
-    pub fn get_content(&self, files_content: &str) -> Result<Vec<u8>, crate::error::ReadError> {
-        Ok(vec![])
-    }
 }
 
-fn parse_list(content: &str) -> Result<Vec<TejarRecord>, crate::error::ReadError> {
-    let lines = content.split('\n');
+fn parse_list(list_content: &str) -> Result<Vec<TejarRecord>, crate::error::ReadError> {
+    // TODO: remove trim, needed because one extra line is getting appended in list content
+    let lines = list_content.trim().split('\n');
     let mut records = Vec::new();
     let mut offset = 0;
     for (index, line) in lines.enumerate() {
@@ -54,7 +51,7 @@ fn parse_list(content: &str) -> Result<Vec<TejarRecord>, crate::error::ReadError
                 content_type: parts[1].to_string(),
                 file_size: parts[2].parse::<u32>().map_err(|e| {
                     crate::error::ReadError::ParseError {
-                        line: index,
+                        line: index + 1,
                         message: e.to_string(),
                     }
                 })?,
@@ -75,4 +72,22 @@ pub fn reader(list_content: &str) -> Result<Reader, crate::error::ReadError> {
     Ok(Reader {
         list: parse_list(list_content)?,
     })
+}
+
+pub fn get_content(
+    offset: usize,
+    size: usize,
+    files_content: &[u8],
+) -> Result<String, crate::error::ReadError> {
+    if files_content.len() < offset + size {
+        return Err(crate::error::ReadError::OutOfRange(format!(
+            "offset: {}, size: {}, content_length: {}",
+            offset,
+            size,
+            files_content.len()
+        )));
+    }
+    Ok(String::from_utf8(
+        files_content[offset..offset + size].to_vec(),
+    )?)
 }
