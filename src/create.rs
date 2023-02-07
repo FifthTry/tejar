@@ -1,18 +1,26 @@
 pub struct Tejar {
-    list: String,   // file
-    files: Vec<u8>, // all file content
+    pub list: String,   // file
+    pub files: Vec<u8>, // all file content
 }
 
 pub fn create(
-    root: &std::path::Path,
-    files: Vec<&std::path::Path>,
+    root: &camino::Utf8Path,
+    files: &[(camino::Utf8PathBuf, String)],
 ) -> Result<Tejar, crate::error::CreateError> {
-    // provided path should be directory or file, with user permission
-    // it will read all the files recursively and create two file list.json and path/<list-path>.tejar
-    // should we use compression?
-    // write both the in the current directly
+    let mut list_content = "".to_string();
+    let mut files_content = vec![];
+
+    for (file, content_type) in files.iter() {
+        let path = root.join(file);
+        let mut content = std::fs::read(path)?;
+        list_content
+            .push_str(format!("{}|{}|{}\n", file.as_str(), content_type, content.len()).as_str());
+        // TODO: use compression?
+        files_content.append(&mut content);
+    }
+
     Ok(Tejar {
-        list: "".to_string(),
-        files: vec![],
+        list: list_content,
+        files: files_content,
     })
 }
