@@ -20,6 +20,24 @@ fn walkdir_util(root: &camino::Utf8Path) -> Vec<(camino::Utf8PathBuf, String)> {
         .collect::<Vec<(camino::Utf8PathBuf, String)>>()
 }
 
+pub fn get_content(
+    offset: usize,
+    size: usize,
+    files_content: &[u8],
+) -> Result<String, crate::error::ReadError> {
+    if files_content.len() < offset + size {
+        return Err(crate::error::ReadError::OutOfRange(format!(
+            "offset: {}, size: {}, content_length: {}",
+            offset,
+            size,
+            files_content.len()
+        )));
+    }
+    Ok(String::from_utf8(
+        files_content[offset..offset + size].to_vec(),
+    )?)
+}
+
 #[test]
 fn test1() {
     // TODO: Test Contain so many unwraps
@@ -44,7 +62,7 @@ fn test1() {
         let original_content = String::from_utf8(std::fs::read(file_path).unwrap()).unwrap();
 
         let file_info = reader.get_file_info(file.as_std_path()).unwrap();
-        let content = crate::read::get_content(
+        let content = get_content(
             file_info.offset as usize,
             file_info.file_size as usize,
             t.files.as_slice(),

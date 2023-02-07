@@ -73,21 +73,3 @@ pub fn reader(list_content: &str) -> Result<Reader, crate::error::ReadError> {
         list: parse_list(list_content)?,
     })
 }
-
-pub fn get_content(
-    offset: usize,
-    size: usize,
-    files_content: &[u8],
-) -> Result<String, crate::error::ReadError> {
-    if files_content.len() < offset + size {
-        return Err(crate::error::ReadError::OutOfRange(format!(
-            "offset: {}, size: {}, content_length: {}",
-            offset,
-            size,
-            files_content.len()
-        )));
-    }
-    Ok(String::from_utf8(
-        files_content[offset..offset + size].to_vec(),
-    )?)
-}

@@ -5,4 +5,4 @@ pub mod error;
 pub mod read;
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
