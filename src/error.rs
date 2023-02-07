@@ -6,6 +6,10 @@ pub enum CreateError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReadError {
-    #[error("data store disconnected")]
+    #[error("io error")]
     IoError(#[from] std::io::Error),
+    #[error("list content parse error: {line}, {message}")]
+    ParseError { line: usize, message: String },
+    #[error("NotFound: {0}")]
+    NotFound(String),
 }

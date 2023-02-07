@@ -1,6 +1,7 @@
 pub struct TejarRecord {
-    file_size: u32,
     file_name: String,
+    offset: u32,
+    file_size: u32,
     content_type: String,
 }
 
@@ -9,9 +10,9 @@ pub struct Reader {
 }
 
 pub struct FileInfo {
-    content_type: String,
-    offset: u32,
-    file_size: u32,
+    pub content_type: String,
+    pub offset: u32,
+    pub file_size: u32,
 }
 
 impl Reader {
@@ -19,10 +20,19 @@ impl Reader {
         &self,
         path: &std::path::Path,
     ) -> Result<FileInfo, crate::error::ReadError> {
+        let file_record = self
+            .list
+            .iter()
+            .find(|r| std::path::Path::new(&r.file_name).eq(path))
+            .ok_or(crate::error::ReadError::NotFound(format!(
+                "file not found: {:?}",
+                path
+            )))?;
+
         Ok(FileInfo {
-            content_type: "".to_string(),
-            offset: 0,
-            file_size: 0,
+            content_type: file_record.content_type.to_string(),
+            offset: file_record.offset,
+            file_size: file_record.file_size,
         })
     }
 
@@ -31,6 +41,33 @@ impl Reader {
     }
 }
 
+fn parse_list(content: &str) -> Result<Vec<TejarRecord>, crate::error::ReadError> {
+    let lines = content.split('\n');
+    let mut records = Vec::new();
+    let mut offset = 0;
+    for (index, line) in lines.enumerate() {
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() == 3 {
+            let record = TejarRecord {
+                file_name: parts[0].to_string(),
+                offset,
+                content_type: parts[1].to_string(),
+                file_size: parts[2].parse::<u32>().map_err(|e| {
+                    crate::error::ReadError::ParseError {
+                        line: index,
+                        message: e.to_string(),
+                    }
+                })?,
+            };
+            offset = offset + record.file_size;
+            records.push(record);
+        }
+    }
+    Ok(records)
+}
+
 pub fn reader(list_content: &str) -> Result<Reader, crate::error::ReadError> {
-    Ok(Reader { list: vec![] })
+    Ok(Reader {
+        list: parse_list(list_content)?,
+    })
 }

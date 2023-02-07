@@ -29,8 +29,27 @@ fn test1() {
         .collect::<Vec<_>>();
 
     let t = crate::create::create(&root, files.as_slice()).unwrap();
+
     println!("List Content");
     println!("{}", t.list);
+
+    // TODO: Read the content of individual file and match the content from reader output
+    let reader = crate::read::reader(&t.list).unwrap();
+    let file_info = reader
+        .get_file_info(std::path::Path::new("foo/index.html"))
+        .unwrap();
+
+    let start = file_info.offset as usize;
+    let end = start + file_info.file_size as usize;
+
+    let content = String::from_utf8(t.files.as_slice()[start..end].to_vec());
+    println!(
+        "Offset: {}, Size: {}, Content: {}",
+        file_info.offset,
+        file_info.file_size,
+        content.unwrap(),
+    );
+
     println!("Files Content");
     println!("{}", String::from_utf8(t.files).unwrap());
 }
